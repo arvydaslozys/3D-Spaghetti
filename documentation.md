@@ -9,7 +9,9 @@
 3. [When do we consider that there is a failure?](#when-do-we-consider-that-there-is-a-failure)
 4. [Taking live video from a printer](#taking-live-video-from-a-printer)
 5. [Stopping the printer with Python](#stopping-the-printer-with-python)
-6. [Fourth Example](#fourth-examplehttpwwwfourthexamplecom)
+6. [Folder structure](#folder-structure)
+7. [Python code](#python-code)
+8. [TODO](#todo)
 
 
 ## Idea of the project
@@ -52,7 +54,7 @@ Example:
 
 ## Model training
 
-The model used for training was Yolov5m.pt, though, we suspect that a smaller model would suffice. Hardware used for training was an Nvidia RTX3060 12GB
+The model used for training was yolov5m.pt, though, we suspect that a smaller model would suffice. Hardware used for training was an Nvidia RTX3060 12GB
 
 Parameters for training the model:
 
@@ -136,3 +138,131 @@ As soon as the connection is successfully opened, it sends a stop command in JSO
 ```
 
 After that, it closes the WebSocket connection, and exits the python script, since there is no need to run it anymore, because the printer was stopped.
+
+## Folder structure
+
+```
+your_project_folder/
+├── Detections.py
+├── yolov5m.pt
+└── yolov5/               <-- cloned YOLOv5 GitHub repo
+    ├── models/
+    ├── utils/
+    ├── detect.py
+    ├── hubconf.py
+    └── ...              
+```
+
+## Python code
+
+Here is the full python code, used to run detection on live feed, and stop the printer if necessary:
+
+```
+import torch
+import time
+import warnings
+import cv2
+import websocket
+import json
+
+
+#printer camera ip adress
+stream_url = "http://172.20.10.2:8080/?action=stream"
+
+number_of_detections = 10
+number_of_frames_with_detections = 10
+waiting_time_after_false_positive = 600  #10 minutes
+
+#Function to stop the printer
+def stop_printer(printer_ip="172.20.10.2"):
+    ws_url = f"ws://{printer_ip}:9999"
+
+    def on_open(ws):
+        ws.send(json.dumps({"method": "set", "params": {"stop": 1}}))
+        ws.close()
+        sys.exit(0)
+
+    websocket.WebSocketApp(ws_url, on_open=on_open).run_forever()
+
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+# Load YOLOv5 model
+model = torch.hub.load('./yolov5', 'custom', path='yolov5m.pt', source='local')
+
+
+# Create a VideoCapture object
+cap = cv2.VideoCapture(stream_url)
+
+def detectionLoop():
+    consecutive_count = 0
+    try:
+        while True:
+            # Read the frame from the video stream
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to read frame from stream.")
+                break
+
+            # Run detection on the current frame
+            results = model(frame)
+
+            # Get detection count
+            detection_count = len(results.pandas().xyxy[0])
+
+            # Check if detection count is 5
+            if detection_count >= number_of_detections:
+                consecutive_count += 1
+            else:
+                consecutive_count = 0  # Reset counter if condition is not met
+
+            # Print message if 5 consecutive detections meet the condition
+            if consecutive_count == number_of_frames_with_detections:
+                return True
+
+            # Show the video feed (optional)
+            cv2.imshow('Detection Feed', results.render()[0])  # Render detected frame
+
+            # Break loop on 'q' key press
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+
+    except KeyboardInterrupt:
+        print("Detection loop stopped.")
+
+while True:
+    if detectionLoop() == True:
+        print('Aptikta klaida, ar norite isjungti spausdintuva? Y/N')
+        prompt = input()
+        if prompt.lower() == 'y':
+            stop_printer()
+            print('Spausdintuvas Isjungtas')
+            break
+        else:
+            time.sleep(waiting_time_after_false_positive)
+
+
+# Release resources
+cap.release()
+cv2.destroyAllWindows()
+
+```
+
+## TODO
+
+**Label more data**
+
+-This will improve the model accuracy, and improve predictions.
+
+**Test on a Raspberry PI**
+
+-The goal, is to make the system work on a Raspberry PI, to save space, and power.
+
+**Test a smaller model**
+
+-A smaller model may be as accurate, but will improve detection speed.
+
+**Make a the detecting device send, and receive emails for stopping the printer remotely**
+
+-If the printer fails while e.g. we are not home, the system should notify us with an email with a picture of the failure attached. If a human confirms the failure, an email should be sent back, so the system could confirm and stop the print.
