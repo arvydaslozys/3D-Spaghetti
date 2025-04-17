@@ -12,7 +12,7 @@
 6. [Folder structure](#folder-structure)
 7. [Python code](#python-code)
 8. [TODO](#todo)
-
+9. [Diagrams](#diagrams)
 
 ## Idea of the project
 
@@ -266,3 +266,7 @@ cv2.destroyAllWindows()
 **Make a the detecting device send, and receive emails for stopping the printer remotely**
 
 -If the printer fails while e.g. we are not home, the system should notify us with an email with a picture of the failure attached. If a human confirms the failure, an email should be sent back, so the system could confirm and stop the print.
+
+## Diagrams
+
+![Diagram(1)](https://github.com/user-attachments/assets/c9d6bc09-9361-4d9f-add3-6a6b04732ac2)
