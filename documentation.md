@@ -6,8 +6,10 @@
      2. [Data labeling](#data-labeling)
      3. [Model training](#model-training)
      4. [Model performance](#model-performance)
-4. [Third Example](#third-example)
-5. [Fourth Example](#fourth-examplehttpwwwfourthexamplecom)
+3. [When do we consider that there is a failure?](#when-do-we-consider-that-there-is-a-failure)
+4. [Taking live video from a printer](#taking-live-video-from-a-printer)
+5. [Stopping the printer with Python](#stopping-the-printer-with-python)
+6. [Fourth Example](#fourth-examplehttpwwwfourthexamplecom)
 
 
 ## Idea of the project
@@ -77,3 +79,60 @@ If we run the detection on a video, and plot the current frame and detection cou
 ![EnderFail1](https://github.com/user-attachments/assets/3821122f-f4d1-4dde-8f00-07b51f895a4b)
 
 Somewhere after the 50th frame, a print failure occured, and we can clearly see, that the detection count skyrocketed, indicating that there is a fault.
+
+## When do we consider that there is a failure?
+
+Since we used small boxes to make our predictions, there will be false positives.
+
+In this example, there **was no print failure**, and we see, that there were a maximum of 3 predictions.
+
+![PrusaNoFail2](https://github.com/user-attachments/assets/5b90599c-5545-4a08-9556-32acce08eee6)
+
+And in this example, there **was a failure**, and we see, that the prediction count is well above 10.
+
+![PrusaFail2](https://github.com/user-attachments/assets/d0f1d2c2-3d8e-4654-b93f-e7be0797ef3e)
+
+
+So we can say, that if there are more then 10 predictions for 10 frames in a row, there is a high possibility, that a print failure has occured.
+
+## Taking live video from a printer
+
+First of all, the device we run detection on, and the printer must be on the same network. Internet connection is **not** required.
+
+The printer we currently use to run the detections on, is a Creality K1C. This printer has an inbuilt camera which we can access by typing its ip adress in a browser:
+
+```
+stream_url = "http://172.20.10.2:8080/?action=stream"
+```
+
+We can open this link with OpenCV, which we use to capture the live feed, and run detection on it:
+
+```
+cap = cv2.VideoCapture(stream_url)
+```
+
+## Stopping the printer with python
+
+```
+def stop_printer(printer_ip="172.20.10.2"):
+    ws_url = f"ws://{printer_ip}:9999"
+
+    def on_open(ws):
+        ws.send(json.dumps({"method": "set", "params": {"stop": 1}}))
+        ws.close()
+        sys.exit(0)
+
+    websocket.WebSocketApp(ws_url, on_open=on_open).run_forever()
+```
+
+
+This Python function is designed to remotely stop a 3D printer by sending a command over a WebSocket connection. Firstly, it creates a WebSocket URL, then 
+it connects to the printer using its IP address (default is 172.20.10.2) on port 9999, which is where the printer is listening for WebSocket commands.
+
+As soon as the connection is successfully opened, it sends a stop command in JSON format:
+
+```
+{"method": "set", "params": {"stop": 1}}
+```
+
+After that, it closes the WebSocket connection, and exits the python script, since there is no need to run it anymore, because the printer was stopped.
