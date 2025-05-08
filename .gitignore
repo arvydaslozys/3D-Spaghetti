@@ -1,5 +1,5 @@
-emailConfigurations
-printerConfig
+emailConfigurations.py
+printerConfig.py
 .DS_Store
 Thumbs.db
 yolov5/
