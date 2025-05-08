@@ -5,15 +5,13 @@ import cv2
 from emailUtils import check_for_yes_reply, send_email, delete_all_emails_from_sender
 from emailConfigurations import TO_EMAIL
 from detectionLoop import detectionLoop
-import torch
-import pathlib
 from stopPrinter import stop_printer
 from printerConfig import PRINTER_IP
 from getStatus import wait_for_print_start_ws
 import sys
-sys.path.append('./yolov5')  # Adjust path if yolov5 is in a different folder
+sys.path.append('./yolov5')
 
-# Patch WindowsPath to PosixPath
+
 from models.common import DetectMultiBackend
 from utils.torch_utils import select_device
 
