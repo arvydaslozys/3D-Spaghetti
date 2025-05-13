@@ -1,6 +1,7 @@
 emailConfigurations.py
 printerConfig.py
 duomenms.py
+Detections.py
 detectionLoop.py
 .DS_Store
 Thumbs.db
