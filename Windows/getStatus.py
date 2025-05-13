@@ -1,10 +1,9 @@
 import websocket
 import json
 import threading
-import time
-from printerConfig import PRINTER_IP
 
-def wait_for_print_start_ws(printer_ip=PRINTER_IP, timeout=3) -> bool:
+
+def wait_for_print_start_ws(printer_ip, timeout=3) -> bool:
     """
     Subscribes to the general printer state updates (not print_stats).
     Returns True if state == 1 (printing) within the timeout.
@@ -15,10 +14,7 @@ def wait_for_print_start_ws(printer_ip=PRINTER_IP, timeout=3) -> bool:
     def on_message(ws, message):
         try:
             data = json.loads(message)
-            # Just dump the payload if you're unsure what the format is
-            # print(json.dumps(data, indent=2))
 
-            # Look for any message with `state` key
             if "state" in data:
                 state_val = data["state"]
             else:
@@ -29,7 +25,7 @@ def wait_for_print_start_ws(printer_ip=PRINTER_IP, timeout=3) -> bool:
                 )
 
             if state_val == 1:  # printing
-                print("🟢 Printer state is 'printing' (1)")
+                print("Printer state is 'printing' (1)")
                 result["started"] = True
                 ws.close()
 
@@ -59,10 +55,4 @@ def wait_for_print_start_ws(printer_ip=PRINTER_IP, timeout=3) -> bool:
         thread.join()
 
     return result["started"]
-
-if __name__ == "__main__":
-    if wait_for_print_start_ws():
-        print("✅ Print has started!")
-    else:
-        print("⏹️ No print in progress.")
 

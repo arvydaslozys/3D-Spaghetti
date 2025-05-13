@@ -8,14 +8,14 @@ from email.mime.image import MIMEImage
 import cv2
 
 
-def send_email(image):
+def send_email(image, printer_name):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_ADDRESS
     msg['To'] = TO_EMAIL
     msg['Subject'] = 'Aptikta Spausdintuvo klaida'
 
     # Email body
-    body = 'Atsakykite į šį laišką "YES", kad išjungti spausdintuvą.'
+    body = f'Atsakykite į šį laišką "{printer_name}", kad išjungti spausdintuvą.'
     msg.attach(MIMEText(body, 'plain'))
 
     # Encode image as JPEG in memory
@@ -50,12 +50,12 @@ def delete_all_emails_from_sender(sender_email):
             # Permanently delete them
             mail.expunge()
     except Exception as e:
-        print(f"⚠️ Error deleting emails: {e}")
+        print(f" Error deleting emails: {e}")
 
 
 
 
-def check_for_yes_reply():
+def check_for_yes_reply(printer_name):
 
     with imaplib.IMAP4_SSL(IMAP_SERVER) as mail:
         mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
@@ -85,9 +85,7 @@ def check_for_yes_reply():
             else:
                 body = message.get_payload(decode=True).decode()
 
-            if "YES" in body.upper():
+            if printer_name.upper() in body.upper():
                 print("Received YES reply!")
                 return True
         return False
-
-delete_all_emails_from_sender("arvydaslozysak@gmail.com")
