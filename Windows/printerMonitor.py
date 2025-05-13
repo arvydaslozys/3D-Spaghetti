@@ -1,10 +1,6 @@
-from emailUtils import check_for_yes_reply, send_email, delete_all_emails_from_sender
-from emailConfigurations import TO_EMAIL
-#from detectionLoop import detectionLoop
+from emailUtils import check_for_yes_reply, send_email
 from stopPrinter import stop_printer
-#from printerConfig import PRINTER_IP
 from getStatus import wait_for_print_start_ws
-
 import cv2
 import torch
 import numpy as np
@@ -24,8 +20,10 @@ class PrinterMonitor:
         self.printer_name = printer_name
         self.printer_ip = printer_ip
         self.camera_url = camera_url
+        self.last_start_check = 0
         self.model = model
         self.print_started = False
+        self.awaiting_reply = False
         self.consecutive_count = 0
         self.detection_count_threshold = detection_count_threshold
         self.consecutive_frames_threshold = consecutive_frames_threshold
@@ -34,7 +32,7 @@ class PrinterMonitor:
         self.cap = cv2.VideoCapture(self.camera_url)
 
     def wait_for_print_start(self):
-        print(f"[{self.printer_name}] Waiting for print start...")
+        print(f"[{self.printer_name}] checking print status...")
         #return wait_for_print_start_ws(self.printer_ip)
         return True
 
@@ -54,7 +52,8 @@ class PrinterMonitor:
         print(f"[{self.printer_name}] Cleaning up resources...")
         if self.cap:
             self.cap.release()
-        cv2.destroyAllWindows()
+        window_name = f'{self.printer_name} - Detection Feed'
+        cv2.destroyWindow(window_name)
 
     def process_one_frame(self):
         if not self.print_started:
@@ -92,7 +91,7 @@ class PrinterMonitor:
             self.consecutive_count = 0
 
         if self.consecutive_count >= self.consecutive_frames_threshold:
-            print(f"🚨 [{self.printer_name}] Failure condition met!")
+            print(f"[{self.printer_name}] Failure condition met!")
             return True
 
         # Draw detections
@@ -113,34 +112,9 @@ class PrinterMonitor:
         fps = 1.0 / (current_time - self.prev_time)
         self.prev_time = current_time
 
+
+
         print(
             f"[{self.printer_name}] detection count = {detection_count}, consecutive count = {self.consecutive_count} FPS = {fps:.2f}")
         return False
-
-
-    def monitor(self):
-        if self.wait_for_print_start():
-
-            delete_all_emails_from_sender(TO_EMAIL)
-            if self.monitor_detection_loop():
-                ret, frame = self.cap.read()
-                if not ret:
-                    print(f"❌ [{self.printer_name}] Failed to capture image.")
-                    return
-
-                self.send_failure_email(frame)
-                print(f"📤 [{self.printer_name}] Failure detected and email sent.")
-
-                reply_received = False
-                for attempt in range(20):
-                    print(f"🔁 [{self.printer_name}] Checking reply ({attempt + 1}/20)...")
-                    if self.check_email_reply():
-                        self.stop_printer()
-                        print(f"✅ [{self.printer_name}] Printer stopped!")
-                        reply_received = True
-                        break
-
-
-                if not reply_received:
-                    print(f"⏱️ [{self.printer_name}] No reply after 20 attempts.")
 

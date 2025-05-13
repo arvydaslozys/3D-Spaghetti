@@ -1,13 +1,1 @@
-emailConfigurations.py
-printerConfig.py
-duomenms.py
 .DS_Store
-Thumbs.db
-yolov5/
-__pycache__/
-**/__pycache__/
-.venv/
-.venv1/
-venv/
-.idea/
-Windows/.idea/
