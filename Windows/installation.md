@@ -17,7 +17,7 @@ C:\Users\arvyd\AppData\Local\Programs\Python\Python39\Scripts
 ```
 
 
-# Create a virtual environment
+# Create a virtual environment inside a cloned 3D-Spaghetti folder 
 
 ```
 python -m venv yolo
