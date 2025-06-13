@@ -29,11 +29,9 @@ yolo\scripts\activate
 https://github.com/git-for-windows/git/releases/tag/v2.49.0.windows.1
 ```
 
-# Clone Yolov5 repo
+# Clone YoloX repo
 ```
-git clone https://github.com/ultralytics/yolov5.git
-cd yolov5
-git checkout v6.2
+git clone https://github.com/Megvii-BaseDetection/YOLOX.git
 ```
 
 # Install 3D-Spaghetti/Windows and Yolov5 requirements
