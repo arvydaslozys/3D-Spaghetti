@@ -3,19 +3,21 @@
 https://www.python.org/downloads/release/python-397/
 
 # Add python to PATH
+You don't need to do this, you select "Add to PATH" while installing python
 
 ```
 C:\Users\arvyd\AppData\Local\Programs\Python\Python39
 ```
 
 # Add pip to PATH
+You don't need to do this, you select "Add to PATH" while installing python
 
 ```
 C:\Users\arvyd\AppData\Local\Programs\Python\Python39\Scripts
 ```
 
 
-# Create a virtual environment
+# Create a virtual environment inside a cloned 3D-Spaghetti folder 
 
 ```
 python -m venv yolo

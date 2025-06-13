@@ -29,5 +29,3 @@ def stop_printer(printer_ip):
         ws.run_forever()  # optional timeout (in seconds)
     except Exception as e:
         print(f"[{printer_ip}] Could not connect to WebSocket: {e}")
-
-stop_printer("192.168.1.100")
