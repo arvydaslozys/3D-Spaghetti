@@ -40,6 +40,18 @@ git clone https://github.com/Megvii-BaseDetection/YOLOX.git
 pip install -r requirements.txt
 ```
 
+# Install vc_redist.x64
+
+```
+https:/aka.ms/vs/16/release/vc_redist.x64.exe
+```
+
+# Install more dependancies
+
+```
+cd YOLOX
+pip install -v -e .
+```
 # In Windows/ launch:
 
 ```
