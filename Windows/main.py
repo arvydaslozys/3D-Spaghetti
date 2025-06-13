@@ -1,14 +1,8 @@
 from printerMonitor import PrinterMonitor
 from printerConfig import printer_configs
 from failureHandle import handle_failure
-from yolox.exp import get_exp
-from yolox.utils import fuse_model, postprocess
-from yolox.models import YOLOX
 import threading
 import cv2
-import torch
-import sys
-import os
 import time
 
 

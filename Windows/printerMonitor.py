@@ -54,8 +54,8 @@ class PrinterMonitor:
         self.consecutive_frames_threshold = consecutive_frames_threshold
         self.prev_time = time.time()
         print(f"[{self.printer_name}] Connecting to camera: {self.camera_url}")
-        #self.cap = cv2.VideoCapture(self.camera_url)
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(self.camera_url)
+
 
     def wait_for_print_start(self):
         print(f"[{self.printer_name}] checking print status...")
@@ -63,19 +63,17 @@ class PrinterMonitor:
 
     def send_failure_email(self, frame):
         print(f"[{self.printer_name}] Sending failure email...")
-        #send_email(frame, self.printer_name)
+        send_email(frame, self.printer_name)
 
     def check_email_reply(self, printer_name):
         print(f"[{self.printer_name}] Checking email reply...")
-        return True
+        return check_for_yes_reply(self.printer_name)
 
     def stop_printer(self):
         print(f"[{self.printer_name}] Stopping printer!")
         stop_printer(self.printer_ip)
 
     def cleanup(self):
-        #if self.cap:
-        #    self.cap.release()
         window_name = f'{self.printer_name}'
         cv2.waitKey(1)
         print(f"Destroying window: {window_name}")
