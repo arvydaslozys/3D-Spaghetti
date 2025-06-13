@@ -13,7 +13,6 @@ def handle_failure(printer, frame):
         if printer.check_email_reply(printer.printer_name):
             printer.stop_printer()
             print(f" [{printer.printer_name}] Printer stopped!")
-            printer.cleanup()
             printer.print_started = False
             break
         time.sleep(5)
