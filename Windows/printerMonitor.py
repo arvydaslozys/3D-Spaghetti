@@ -1,5 +1,6 @@
 from emailUtils import check_for_yes_reply, send_email
 from stopPrinter import stop_printer
+from exps.custom.yolox_m import Exp
 from getStatus import wait_for_print_start_ws
 import cv2
 import torch
@@ -7,84 +8,96 @@ import numpy as np
 import time
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'yolov5'))
-
-from utils.general import non_max_suppression, scale_coords
-from utils.augmentations import letterbox
-
-
+from yolox.exp import get_exp
+from yolox.utils.visualize import vis
+from yolox.utils import postprocess
+from yolox.utils.visualize import vis
+from predictor import Predictor  # If you put it in a new file
 
 
 class PrinterMonitor:
-    def __init__(self, printer_name, printer_ip, camera_url, model,detection_count_threshold=15, consecutive_frames_threshold=5):
+    def __init__(self, printer_name, printer_ip, camera_url, detection_count_threshold=15, consecutive_frames_threshold=5):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        exp = get_exp("YOLOX/exps/custom/yolox_m.py", None)
+        exp.test_conf = 0.25
+        exp.nmsthre = 0.45
+        self.exp = Exp()
+
+        self.model = exp.get_model()
+        self.model.to(self.device)
+        self.model.eval()
+
+        ckpt_path = "epoch_40_ckpt.pth"
+        ckpt = torch.load(ckpt_path, map_location="cpu")
+        self.model.load_state_dict(ckpt["model"])
+        print(f"[{printer_name}] Loaded weights from {ckpt_path}")
+
+        self.predictor = Predictor(
+            model=self.model,
+            exp=exp,
+            cls_names=["failure"],
+            decoder=None,
+            device="cuda" if torch.cuda.is_available() else "cpu",
+            fp16=False,
+            legacy=False
+        )
+
         self.printer_name = printer_name
         self.printer_ip = printer_ip
         self.camera_url = camera_url
         self.last_start_check = 0
-        self.model = model
         self.print_started = False
         self.awaiting_reply = False
         self.consecutive_count = 0
         self.detection_count_threshold = detection_count_threshold
         self.consecutive_frames_threshold = consecutive_frames_threshold
-        self.prev_time = time.time()  # for FPS
+        self.prev_time = time.time()
         print(f"[{self.printer_name}] Connecting to camera: {self.camera_url}")
-        self.cap = cv2.VideoCapture(self.camera_url)
+        #self.cap = cv2.VideoCapture(self.camera_url)
+        self.cap = cv2.VideoCapture(0)
 
     def wait_for_print_start(self):
         print(f"[{self.printer_name}] checking print status...")
-        #return wait_for_print_start_ws(self.printer_ip)
         return True
 
     def send_failure_email(self, frame):
         print(f"[{self.printer_name}] Sending failure email...")
-        send_email(frame, self.printer_name)
+        #send_email(frame, self.printer_name)
 
     def check_email_reply(self, printer_name):
         print(f"[{self.printer_name}] Checking email reply...")
-        return check_for_yes_reply(printer_name)
+        return True
 
     def stop_printer(self):
         print(f"[{self.printer_name}] Stopping printer!")
         stop_printer(self.printer_ip)
 
     def cleanup(self):
-        print(f"[{self.printer_name}] Cleaning up resources...")
-        if self.cap:
-            self.cap.release()
-        window_name = f'{self.printer_name} - Detection Feed'
+        #if self.cap:
+        #    self.cap.release()
+        window_name = f'{self.printer_name}'
+        cv2.waitKey(1)
+        print(f"Destroying window: {window_name}")
         cv2.destroyWindow(window_name)
+        print(f"[{self.printer_name}] Resources cleaned")
+
 
     def process_one_frame(self):
         if not self.print_started:
             print(f"[{self.printer_name}] Waiting for print start...")
             self.print_started = self.wait_for_print_start()
-            return False  # Skip detection until print starts
+            return False
 
         ret, frame = self.cap.read()
         if not ret:
             print(f"[{self.printer_name}] Failed to read frame from stream.")
             return False
 
-        # Preprocess
-        img_resized = letterbox(frame, new_shape=640)[0]
-        img = img_resized[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
-        img = np.ascontiguousarray(img)
-        img = torch.from_numpy(img).to(self.model.device)
-        img = img.float() / 255.0
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
-
-        # Inference
-        with torch.no_grad():
-            pred = self.model(img, augment=False)
-
-        # Apply NMS
-        pred = non_max_suppression(pred, conf_thres=0.3, iou_thres=0.45)[0]
-
+        outputs, img_info = self.predictor.inference(frame)
+        pred = outputs[0].cpu() if outputs[0] is not None else None
         detection_count = 0 if pred is None else len(pred)
 
-        # Update consecutive detection logic
         if detection_count >= self.detection_count_threshold:
             self.consecutive_count += 1
         else:
@@ -94,27 +107,15 @@ class PrinterMonitor:
             print(f"[{self.printer_name}] Failure condition met!")
             return True
 
-        # Draw detections
-        if pred is not None and len(pred):
-            pred[:, :4] = scale_coords(img.shape[2:], pred[:, :4], frame.shape).round()
-            for *xyxy, conf, cls in pred:
-                label = f'{int(cls)} {conf:.2f}'
-                cv2.rectangle(frame, (int(xyxy[0]), int(xyxy[1])),
-                              (int(xyxy[2]), int(xyxy[3])), (0, 255, 0), 2)
-                cv2.putText(frame, label, (int(xyxy[0]), int(xyxy[1]) - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        result_frame = self.predictor.visual(outputs[0], img_info, cls_conf=0.1)
+        cv2.imshow(f'{self.printer_name}', result_frame)
 
-        # Show the video feed (optional)
-        cv2.imshow(f'{self.printer_name} - Detection Feed', frame)
-
-        # Calculate FPS
         current_time = time.time()
         fps = 1.0 / (current_time - self.prev_time)
         self.prev_time = current_time
 
-
-
         print(
-            f"[{self.printer_name}] detection count = {detection_count}, consecutive count = {self.consecutive_count} FPS = {fps:.2f}")
+            f"[{self.printer_name}] detection count = {detection_count}, consecutive count = {self.consecutive_count}, FPS = {fps:.2f}")
         return False
+
 

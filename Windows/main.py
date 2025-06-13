@@ -1,6 +1,9 @@
 from printerMonitor import PrinterMonitor
 from printerConfig import printer_configs
 from failureHandle import handle_failure
+from yolox.exp import get_exp
+from yolox.utils import fuse_model, postprocess
+from yolox.models import YOLOX
 import threading
 import cv2
 import torch
@@ -8,15 +11,10 @@ import sys
 import os
 import time
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'yolov5'))
-
-from models.common import DetectMultiBackend
-from utils.torch_utils import select_device
 
 
-device = select_device('0' if torch.cuda.is_available() else 'cpu')
-model = DetectMultiBackend('best.pt', device=device)
-model.eval()
+
+
 print("Shared model loaded.")
 
 
@@ -28,7 +26,6 @@ for cfg in printer_configs:
         printer_name=cfg["printer_name"],
         printer_ip=cfg["printer_ip"],
         camera_url=cfg["camera_url"],
-        model=model
     )
     printers.append(printer)
 
@@ -59,6 +56,7 @@ while True:
                 if not ret:
                     print(f"[{printer.printer_name}] Failed to capture image.")
                     continue
+                printer.cleanup()
                 thread = threading.Thread(target=handle_failure, args=(printer, frame))
                 thread.start()
 
