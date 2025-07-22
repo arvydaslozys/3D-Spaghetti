@@ -16,7 +16,7 @@ from predictor import Predictor  # If you put it in a new file
 
 
 class PrinterMonitor:
-    def __init__(self, printer_name, printer_ip, camera_url, detection_count_threshold=15, consecutive_frames_threshold=5):
+    def __init__(self, printer_name, printer_ip, camera_url, detection_count_threshold=10, consecutive_frames_threshold=5):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         exp = get_exp("YOLOX/exps/custom/yolox_m.py", None)
@@ -31,7 +31,9 @@ class PrinterMonitor:
         ckpt_path = "20250715.pth"
         ckpt = torch.load(ckpt_path, map_location="cpu")
         self.model.load_state_dict(ckpt["model"])
-        print(f"[{printer_name}] Loaded weights from {ckpt_path}")
+
+        print("Model loaded, model version - "+ ckpt_path, "\n")
+
 
         self.predictor = Predictor(
             model=self.model,
@@ -49,16 +51,18 @@ class PrinterMonitor:
         self.last_start_check = 0
         self.print_started = False
         self.awaiting_reply = False
+        self.printer_online = True
         self.consecutive_count = 0
         self.detection_count_threshold = detection_count_threshold
         self.consecutive_frames_threshold = consecutive_frames_threshold
         self.prev_time = time.time()
-        print(f"[{self.printer_name}] Connecting to camera: {self.camera_url}")
+        #print(f"[{self.printer_name}] Connecting to camera: {self.camera_url}")
         self.cap = cv2.VideoCapture(self.camera_url)
 
 
     def wait_for_print_start(self):
-        print(f"[{self.printer_name}] checking print status...")
+        print(f"[{self.printer_name}] Checking print status...")
+        #return wait_for_print_start_ws(self.printer_ip)
         return True
 
     def send_failure_email(self, frame):
