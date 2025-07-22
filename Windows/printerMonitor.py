@@ -28,7 +28,7 @@ class PrinterMonitor:
         self.model.to(self.device)
         self.model.eval()
 
-        ckpt_path = "epoch_40_ckpt.pth"
+        ckpt_path = "20250715.pth"
         ckpt = torch.load(ckpt_path, map_location="cpu")
         self.model.load_state_dict(ckpt["model"])
         print(f"[{printer_name}] Loaded weights from {ckpt_path}")
