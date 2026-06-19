@@ -1,0 +1,5 @@
+testing/
+weights/
+.idea/
+__pycache__/
+.venv/
