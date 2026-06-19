@@ -10,3 +10,4 @@ __init__.py
 .idea/
 todo.txt
 __pycache__/
+requirements_old.txt
