@@ -69,4 +69,4 @@ async def detect(file: UploadFile = File(...)):
     return {"count": count, "fail_count": fail_count, "boxes": boxes}
 
 # service start:
-# uvicorn serviceRfdetr:app --host 0.0.0.0 --port 8000
+# uvicorn main:app --host 0.0.0.0 --port 8000
