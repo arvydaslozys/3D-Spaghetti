@@ -1,4 +1,5 @@
 <img width="2504" height="1242" alt="Screenshot 2026-06-19 at 5 05 43 PM" src="https://github.com/user-attachments/assets/4e2d28d8-e0c1-447a-9fe4-2357446a8790" />
+
 ## Idea of the project
 
 ![SpaghettiExample](https://github.com/user-attachments/assets/56b2ee48-3078-4bb3-a339-dc810db39534)
