@@ -3,3 +3,4 @@ weights/
 .idea/
 __pycache__/
 .venv/
+checkpoint_best_ema.pth
