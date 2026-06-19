@@ -9,4 +9,4 @@ email_configurations.py
 __init__.py
 .idea/
 todo.txt
-__pycache__
+__pycache__/
