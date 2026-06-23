@@ -1,69 +1,81 @@
-from email_utils import check_for_yes_reply, send_email
-from Windows.utils.stop_printer import stop_printer
-from Windows.utils.services import send_image_rfdetr, send_image_yolo26
-from get_printing_status import is_printer_printing_ws
+from utils.email_utils import check_for_yes_reply, send_email
+from utils.stop_printer import stop_printer
+from utils.services import send_image_rfdetr, send_image_yolo26
+from utils.get_printing_status import is_printer_printing_ws
 import cv2
 import time
-from Windows.utils.tools import draw_boxes_yolo26, set_led_state, calculate_score
+from utils.tools import draw_boxes_yolo26, calculate_score
 
 #debug settings
-TEST_IMAGE = True
-TEST_VIDEO = True
+TEST_IMAGE = False
+TEST_VIDEO = False
 SEND_EMAIL = False
-CHECK_PRINTING_STATUS = False
+CHECK_PRINTING_STATUS = True
 CHECK_EMAILS = False
 FAILURES_ENABLED = False
 
 class PrinterMonitor:
-    def __init__(self, printer_name, printer_ip, camera_id, pi_ip, printer_type, led_pin):
+    def __init__(self, printer_name, printer_ip, camera_url, printer_type):
         self.printer_name = printer_name
         self.printer_ip = printer_ip
-        self.camera_id = camera_id
-        self.last_start_check = 0
+        self.camera_url = camera_url
+        self.fps_fps_prev_time = time.time()
+        self.printer_type = printer_type
+        self.score = 0
+        self.is_printer_online_last_check = 0
+        self.last_failure_check = 0
         self.print_started = False
         self.awaiting_reply = False
         self.camera_available = True
-        self.consecutive_count = 0
-        self.prev_time = time.time()
-        #print(f"[{self.printer_name}] Connecting to camera: {self.camera_id}")
-        self.led_pin = led_pin
-        self.pi_ip = pi_ip
-        self.printer_type = printer_type
-        self.led_State = False
-        self.set_led(self.led_State)
-        self.score = 0
+        self.printer_failed = False
 
     def get_frame(self):
-        cap = cv2.VideoCapture(self.camera_id)
+        cap = cv2.VideoCapture(self.camera_url)
         ret, frame = cap.read()
         return ret, frame
 
+    def get_failure_status(self):
+        return self.printer_failed
+
+    def set_failure_status(self, STATUS):
+        self.printer_failed = STATUS
+
     def is_printer_printing(self):
+        #-----DEBUG-----#
         if not CHECK_PRINTING_STATUS:
             return True
+        #-----DEBUG-----#
 
 
         print(f"[{self.printer_name}] Checking print status...")
         self.print_started = is_printer_printing_ws(self.printer_ip, self.printer_type, self.printer_name)
-
-        if self.print_started:
-            return True
-
-        else:
+        if not self.print_started:
             print(f"[{self.printer_name}] not printing.")
             try:
                 cv2.destroyWindow(f"{self.printer_name}_YOLO26")
                 cv2.destroyWindow(f"{self.printer_name}_RFDETR")
             except:
                 pass
-
-        return False
+        else:
+            return True
 
 
     def send_failure_email(self, frame):
         if SEND_EMAIL:
             print(f"[{self.printer_name}] Sending failure email...")
             send_email(frame, self.printer_name)
+
+    def is_camera_available(self):
+        cap = cv2.VideoCapture(self.camera_url)
+        ret, _ = cap.read()
+        cap.release()
+        if not ret:
+            print(f"[{self.printer_name}] Camera is not available")
+            self.camera_available = False
+            return False
+
+        self.camera_available = True
+        return True
 
     def check_email_reply(self, printer_name):
         if CHECK_EMAILS:
@@ -76,19 +88,15 @@ class PrinterMonitor:
         print(f"[{self.printer_name}] Stopping printer!")
         stop_printer(self.printer_ip,printer_type)
 
-    def set_led(self, state):
-        set_led_state(state, self.pi_ip, self.led_pin)
-
     def process_one_frame(self,SHOW_DETECTIONS):
         if TEST_IMAGE:
-            frame = cv2.imread("bambufail.jpeg")
+            frame = cv2.imread("test.jpg")
         else:
-            cap = cv2.VideoCapture(self.camera_id)
+            cap = cv2.VideoCapture(self.camera_url)
             ret, frame = cap.read()
             if not ret:
                 print("Couldn't capture image")
                 return False
-
 
         detection_count_yolo26, boxes_yolo26 = send_image_yolo26(frame)
         detection_count_rfdetr, boxes_rfdetr = send_image_rfdetr(frame)
@@ -98,8 +106,8 @@ class PrinterMonitor:
         self.score = calculate_score(detection_count_yolo26, detection_count_rfdetr, self.score)
 
         current_time = time.time()
-        fps = 1.0 / (current_time - self.prev_time)
-        self.prev_time = current_time
+        fps = 1.0 / (current_time - self.fps_prev_time)
+        self.fps_prev_time = current_time
 
         if SHOW_DETECTIONS:
             cv2.imshow(f"{self.printer_name}_RFDETR",draw_boxes_yolo26(frame.copy(), boxes_rfdetr))
@@ -108,14 +116,8 @@ class PrinterMonitor:
         print(f"[{self.printer_name}] failure score = {self.score}, FPS = {fps:.2f}")
 
 
-        if not FAILURES_ENABLED:
-            return False
-
         if self.score > 100:
-            self.score = 0
-            return True
-
-        return False
+            self.set_failure_status(True)
 
 
 

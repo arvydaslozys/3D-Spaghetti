@@ -7,10 +7,7 @@ import requests
 def is_printer_printing_ws(printer_ip,  printer_type, printer_name, timeout=5) -> bool:
 
     if printer_type.lower() == "creality_k1c":
-        """
-        Subscribes to the general printer state updates (not print_stats).
-        Returns True if state == 1 (printing) within the timeout.
-        """
+
         ws_url = f"ws://{printer_ip}:9999"
         result = {"started": False}
 
@@ -36,7 +33,6 @@ def is_printer_printing_ws(printer_ip,  printer_type, printer_name, timeout=5) -
                 print("Error parsing message:", e)
 
         def on_open(ws):
-            # Optionally ask for status, depending on how your printer responds
             ws.send(json.dumps({
                 "method": "get",
                 "params": ["state"]

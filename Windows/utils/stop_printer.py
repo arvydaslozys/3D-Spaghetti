@@ -28,7 +28,7 @@ def stop_printer(printer_ip, printer_type):
                 on_error=on_error,
                 on_close=on_close
             )
-            ws.run_forever()  # optional timeout (in seconds)
+            ws.run_forever()
         except Exception as e:
             print(f"[{printer_ip}] Could not connect to WebSocket: {e}")
 

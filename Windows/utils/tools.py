@@ -7,7 +7,6 @@ def draw_boxes_rfdetr(frame, boxes):
     for box in boxes:
         y1, x1, y2, x2 = map(int, box)
 
-        # Flip horizontally
         x1_flipped = w - x2
         x2_flipped = w - x1
 
@@ -25,7 +24,6 @@ def draw_boxes_yolo26(frame, boxes):
     for box in boxes:
         x1, y1, x2, y2 = map(int, box)
 
-        # Always red (since you only care about "fail")
         color = (0, 0, 255)
 
         cv2.rectangle(
@@ -38,25 +36,8 @@ def draw_boxes_yolo26(frame, boxes):
 
     return frame
 
-def set_led_state(state, pi_ip, led_pin):
-    '''
-    if state:
-        requests.get(f"http://{pi_ip}:5000/setlighting/{led_pin}/on")
-    else:
-        requests.get(f"http://{pi_ip}:5000/setlighting/{led_pin}/off")
-    '''
 
-def is_camera_available(camera_id, printer_name):
-    '''
-    cap = cv2.VideoCapture(camera_id)
-    ret, frame = cap.read()
 
-    if not ret:
-        print(f"[{printer_name}] Couldn't capture image, check camera id!")
-        return False
-
-    return True
-    '''
 def calculate_score(detection_count_1, detection_count_2, score):
 
     if detection_count_1 < 5:
