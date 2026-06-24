@@ -9,8 +9,8 @@ from utils.tools import draw_boxes_yolo26, calculate_score
 
 #debug settings
 TEST_IMAGE = False
-SEND_EMAIL = False
-CHECK_PRINTING_STATUS = False
+SEND_EMAIL = True
+CHECK_PRINTING_STATUS = True
 CHECK_EMAILS = True
 
 if TEST_IMAGE:

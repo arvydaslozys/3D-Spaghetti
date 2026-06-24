@@ -1,7 +1,7 @@
 import cv2
 import requests
 
-API_URL_RFDETR = "http://localhost:8000/detect/rfdetr"  # change if needed
+API_URL_RFDETR = "http://localhost:8000/detect/rfdetr"
 API_URL_YOL26 = "http://localhost:8001/detect/yolo26"
 
 

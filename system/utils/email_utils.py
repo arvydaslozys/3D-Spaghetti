@@ -35,8 +35,6 @@ def send_email(image, printer_name):
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
 
-    print("Emails with image sent.")
-
 
 def delete_all_emails_from_sender():
     try:
