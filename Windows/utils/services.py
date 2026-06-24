@@ -14,7 +14,7 @@ def send_image_rfdetr(frame):
         response = requests.post(
             API_URL_RFDETR,
             files={"file": ("frame.jpg", img_encoded.tobytes(), "image/jpeg")},
-            timeout=0.1
+            timeout=0.5
         )
 
         if response.status_code != 200:

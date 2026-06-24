@@ -31,26 +31,20 @@ def logic_loop(printers):
         if current_time - printer.is_printer_online_last_check > PRINTER_ONLINE_CHECK_INTERVAL:
             printer.is_printer_online_last_check = current_time  # Update check time
 
-            # is the camera available
-            if not printer.is_camera_available():
+            # is the printer currently printing/online
+            if not printer.get_printing_status():
                 continue
 
-            # is the printer currently printing
-            if not printer.is_printer_printing():
+            # is the camera available
+            if not printer.is_camera_available():
                 continue
 
         if not printer.awaiting_reply and printer.print_started and printer.camera_available:
             if current_time - printer.last_failure_check > FAILURE_CHECK_INTERVAL:
                 printer.last_failure_check = current_time  # Update check time
-
-                failure = printer.process_one_frame(SHOW_DETECTIONS)
+                printer.process_one_frame(SHOW_DETECTIONS)
                 cv2.waitKey(1)
 
                 if printer.get_failure_status():
-                    printer.awaiting_reply = True
-                    ret, frame = printer.get_frame()
-                    if not ret:
-                        print(f"[{printer.printer_name}] Failed to capture image.")
-                        continue
-                    thread = threading.Thread(target=handle_failure, args=(printer, frame))
+                    thread = threading.Thread(target=handle_failure, args=(printer,))
                     thread.start()

@@ -72,8 +72,10 @@ def is_printer_printing_ws(printer_ip,  printer_type, printer_name, timeout=5) -
             if state.lower() == "printing":
                 return True
             else:
+                print(f"[{printer_name}] is on standby")
                 return False
         except:
+
             print(f"Printer [{printer_name}] not online/unreachable")
             return False
 

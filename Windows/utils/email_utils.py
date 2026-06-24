@@ -61,7 +61,7 @@ def delete_all_emails_from_sender():
     except Exception as e:
         print(f"Error deleting emails: {e}")
 
-def check_for_yes_reply(printer_name):
+def check_for_user_response(printer_name):
     try:
         with imaplib.IMAP4_SSL(IMAP_SERVER) as mail:
             mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
@@ -97,7 +97,6 @@ def check_for_yes_reply(printer_name):
 
                     # Look for the keyword in the email body
                     if printer_name.upper() in body.upper():
-                        print("Received YES reply!")
                         return True
 
         return False

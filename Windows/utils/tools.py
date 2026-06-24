@@ -36,8 +36,6 @@ def draw_boxes_yolo26(frame, boxes):
 
     return frame
 
-
-
 def calculate_score(detection_count_1, detection_count_2, score):
 
     if detection_count_1 < 5:
