@@ -1,0 +1,17 @@
+{
+  "receiving_emails": [
+    {
+      "email": "example@email.com"
+    }
+  ],
+  "sender_email": [
+    {
+      "email_address": "example@email.com",
+      "email_password": "password",
+      "smtp": "smtp.email.com",
+      "imap": "imap.email.com"
+    }
+  ]
+}
+
+

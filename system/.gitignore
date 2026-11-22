@@ -1,0 +1,17 @@
+model_test_images/
+model_test_videos/
+model_weights/
+model_testing/
+old_files/
+testing/
+printer_configurations.py
+email_configurations.py
+__init__.py
+.idea/
+todo.txt
+__pycache__/
+requirements_old.txt
+test.jpg
+legacy/
+/.venv/
+/.pytest_cache/
