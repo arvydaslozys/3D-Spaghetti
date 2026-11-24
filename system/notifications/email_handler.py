@@ -38,7 +38,16 @@ class PrinterAlertEmailHandler:
         except Exception as e:
             self.success = False
 
-    def send_alert(self,image, printer_name) -> bool:
+    def send_alert_test(self):
+        for recipient in self.TO_EMAILS:
+            msg = MIMEText('Hello from SDS!', 'plain')
+            msg['From'] = self.EMAIL_ADDRESS
+            msg['To'] = recipient
+            msg['Subject'] = 'SDS test email'
+            self.send_email(msg)
+
+    def send_alert(self,image, printer_name: str, TEST: bool = False) -> bool:
+        
         self.success = True
 
         for email in self.TO_EMAILS:
