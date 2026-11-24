@@ -11,6 +11,8 @@ import cv2
 
 class PrinterAlertEmailHandler:
     def __init__(self):
+        self.success = None
+
         config_path = Path(__file__).resolve().parent.parent / "configurations" / "email_config.json"
         with open(config_path) as f:
             data = json.load(f)
@@ -28,13 +30,17 @@ class PrinterAlertEmailHandler:
             self.IMAP_SERVER = sender_emails["imap"]
 
     def send_email(self,msg):
-        # Send email
-        with smtplib.SMTP_SSL(self.SMTP_SERVER, 465) as server:
-            server.login(self.EMAIL_ADDRESS, self.EMAIL_PASSWORD)
-            server.send_message(msg)
+        try:
+            with smtplib.SMTP_SSL(self.SMTP_SERVER, 465) as server:
+                server.login(self.EMAIL_ADDRESS, self.EMAIL_PASSWORD)
+                server.send_message(msg)
+                return
+        except Exception as e:
+            self.success = False
 
-    def send_alert(self,image, printer_name):
-        #test
+    def send_alert(self,image, printer_name) -> bool:
+        self.success = True
+
         for email in self.TO_EMAILS:
             msg = MIMEMultipart()
             msg['From'] = self.EMAIL_ADDRESS
@@ -53,8 +59,9 @@ class PrinterAlertEmailHandler:
             else:
                 print("Failed to encode image")
 
-            # Send email
-        self.send_email(msg)
+
+            self.send_email(msg)
+        return self.success
 
 
 

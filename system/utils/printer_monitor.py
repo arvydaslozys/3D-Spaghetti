@@ -39,7 +39,6 @@ class PrinterMonitor:
         self.is_printer_online_last_check = 0
         self.last_failure_check = 0
         self.print_started = False
-        self.awaiting_reply = False
         self.camera_available = True
         self.printer_failed = False
         self.last_frame = None

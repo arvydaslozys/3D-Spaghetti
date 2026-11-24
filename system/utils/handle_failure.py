@@ -14,7 +14,11 @@ class FailureHandler:
         printer.set_failure_status(True)
         ATTEMPTS = 20
 
-        self.notificationhandler.send_alert(printer.last_frame,printer.printer_name)
+        #if alert fails to send
+        if not self.notificationhandler.send_alert(printer.last_frame, printer.printer_name):
+            printer.set_failure_status(False)
+            return
+            
         print(f"[{printer.printer_name}] Failure detected and email sent.")
 
         reply_received = False
@@ -34,4 +38,3 @@ class FailureHandler:
         if not reply_received:
             print(f"[{printer.printer_name}] No reply after {ATTEMPTS} attempts, continuing printing")
             printer.set_failure_status(False)
-            printer.awaiting_reply = False

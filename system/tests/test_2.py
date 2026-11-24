@@ -44,7 +44,6 @@ def test_handle_failure(monkeypatch,printer):
 
     monkeypatch.setattr(printer.failureHandler.notificationhandler,"check_for_user_response",Mock(return_value=True))
     stop_print = Mock()
-    KlipperMoonrakerPrinter.stop_print = stop_print
     monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
 
     send_alert = Mock()
@@ -52,7 +51,7 @@ def test_handle_failure(monkeypatch,printer):
     printer.printer_failed = True
 
     set_failure_status = Mock()
-    printer.set_failure_status = set_failure_status
+    monkeypatch.setattr(printer,"set_failure_status",set_failure_status)
 
     printer.failureHandler.handle_failure(printer)
 
@@ -112,7 +111,6 @@ def test_is_printing(monkeypatch,value,printer):
 
 def test_stop_print(monkeypatch,printer):
     stop_print = Mock()
-    KlipperMoonrakerPrinter.stop_print = stop_print
     monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
     printer.stop_print()
     stop_print.assert_called_once()
@@ -183,7 +181,6 @@ def test_logic_loop2(monkeypatch, printer):
 def test_calculate_score(det1,det2,score,expected):
     assert tools.calculate_score(score,det1,det2) == expected
 
-
 @pytest.mark.parametrize("ret,frame,expected", [
 (False, None, None),
 (True, np.zeros((100, 100, 3), dtype=np.uint8), np.zeros((100, 100, 3), dtype=np.uint8))])
@@ -211,3 +208,9 @@ def test_KlipperMoonrakerCamera_invalid_ip(monkeypatch):
     camera = KlipperMoonrakerCamera("111.111.111.111")
     result = camera.get_frame()
     assert result is None
+
+def test_email_invalid_config(monkeypatch, printer):
+    monkeypatch.setattr(email_handler,"SMTP_SERVER","TEST")
+    printer.printer_failed = True
+    printer.failureHandler.handle_failure(printer)
+    assert printer.printer_failed == False
