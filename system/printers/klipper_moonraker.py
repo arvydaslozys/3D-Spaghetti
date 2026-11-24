@@ -13,9 +13,9 @@ class KlipperMoonrakerPrinter:
         self.printer_name = printer_name
         self.printer_ip = printer_ip
 
-    def is_printing(self) -> bool:
+    def is_printing(self) -> bool | None:
         """
-        Return True only if the printer is actively printing.
+        Return True only if the printer is actively printing. If printer is unreachable, the printing status is unknown, thus function returns None
         """
 
         try:
@@ -36,12 +36,24 @@ class KlipperMoonrakerPrinter:
             return state == "printing"
         except Exception:
             print(f"{self.printer_name} is not online")
-            return False
+            return None
 
-    def stop_print(self) -> None:
-        MOONRAKER_URL = f"http://{self.printer_ip}:7125/printer/gcode/script"
-        payload = {"script": "M112"}
 
-        resp = requests.post(MOONRAKER_URL, json=payload)
-        print(resp.status_code, resp.text)
-
+    def stop_print(self) -> bool | None:
+        """
+        Returns True if printer stopped successfully, otherwise returns False. If it cannot be confirmed that the print was stopped, the function returns None
+        """
+        RETRY_AMOUNT = 5
+        feedback = None
+        for _ in range(RETRY_AMOUNT):
+            MOONRAKER_URL = f"http://{self.printer_ip}:7125/printer/gcode/script"
+            payload = {"script": "M112"}
+            resp = requests.post(MOONRAKER_URL, json=payload, timeout=5)
+            feedback = self.is_printing()
+            if feedback is False:
+                print(f"{self.printer_name} stopped successfully.\n")
+                return True
+        if feedback is None:
+            print(f"Cannot verify if {self.printer_name} was stopped!.\n")
+            return None
+        return False
