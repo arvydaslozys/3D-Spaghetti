@@ -9,7 +9,7 @@ class FailureHandler:
         self.notificationhandler = notificationhandler
 
 
-    def handle_failure(self, printer):
+    def handle_failure(self, printer) -> None:
 
         printer.set_failure_status(True)
         ATTEMPTS = 20
@@ -26,6 +26,7 @@ class FailureHandler:
         for attempt in range(ATTEMPTS):
             print(f"[{printer.printer_name}] Checking reply ({attempt + 1}/20)...")
 
+            #-------USER CONFRIMS FAILURE------#
             if self.notificationhandler.check_for_user_response(printer.printer_name):
                 print(f" [{printer.printer_name}] received a reply, attempting to stop")
                 if printer.stop_print():

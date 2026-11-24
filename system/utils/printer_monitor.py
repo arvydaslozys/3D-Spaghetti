@@ -1,5 +1,6 @@
 from utils.services import send_image_rfdetr, send_image_yolo26
 import threading
+import numpy as np
 import cv2
 import time
 from utils.tools import draw_boxes_yolo26, calculate_score
@@ -86,7 +87,7 @@ class PrinterMonitor:
         else:
             return True
 
-    def get_frame(self):
+    def get_frame(self) -> np.ndarray | None:
         """
         Returns:
             numpy.ndarray
