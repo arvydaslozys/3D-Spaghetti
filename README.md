@@ -9,3 +9,19 @@ When using 3D printers, failures are inevitable. One of the most common types of
 This unexpected behavior can lead to issues such as filament blobs forming on the hotend, potentially causing damage, as well as wasting filament and printing time. 
 
 The goal of this project is to use **machine vision** to detect these failures early and stop the printing process before any serious damage occurs, ultimately saving both **filament** and **time**.
+
+## Verify setup
+
+After installing the system dependencies and configuring your printers, run from the `system` directory.
+
+Check printer and camera connections:
+
+```sh
+.venv/bin/python -m verify.setup --printers true
+```
+
+Check if notifications are sent:
+
+```sh
+.venv/bin/python -m verify.setup --notifications true
+```
