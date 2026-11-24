@@ -2,7 +2,7 @@
   "printers": [
     {
       "printer_name": "Printer 1",
-      "printer_ip": "192.168.5.220",
+      "printer_ip": "192.168.1.1",
       "printer_type": "klipper_moonraker",
       "camera": {
         "type": "network"

@@ -15,3 +15,4 @@ test.jpg
 legacy/
 /.venv/
 /.pytest_cache/
+configurations/
