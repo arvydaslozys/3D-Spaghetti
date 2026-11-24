@@ -1,11 +1,12 @@
 import cv2
-from typing import Protocol, TYPE_CHECKING
+from typing import Optional
+import numpy as np
 
 class UsbCamera:
     def __init__(self,camera_id):
         self.camera_id = camera_id
 
-    def get_frame(self):
+    def get_frame(self) -> np.ndarray | None:
         cap = cv2.VideoCapture(self.camera_id)
 
         if not cap.isOpened():
@@ -25,12 +26,11 @@ class KlipperMoonrakerCamera:
         self.camera_url = f"http://{printer_ip}/webcam/stream"
         self.cap = None
 
-    def get_frame(self) -> "numpy.ndarray":
+    def get_frame(self) -> np.ndarray | None:
         if self.cap is None:
             self.cap = cv2.VideoCapture(self.camera_url)
 
         ret, frame = self.cap.read()
-
         if not ret:
             print(f"Could not read frame: {self.camera_url}")
             self.close()
@@ -38,7 +38,7 @@ class KlipperMoonrakerCamera:
 
         return frame
 
-    def close(self):
+    def close(self) -> None:
         if self.cap is not None:
             self.cap.release()
             self.cap = None

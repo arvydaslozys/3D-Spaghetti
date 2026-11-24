@@ -36,7 +36,10 @@ def draw_boxes_yolo26(frame, boxes):
 
     return frame
 
-def calculate_score(detection_count_1: int | None, detection_count_2: int | None, score: int) -> int:
+
+def calculate_score(score: int,detection_count_1: int | None = None, detection_count_2: int | None = None) -> int:
+    if score is None:
+        score = 0
     if detection_count_1 is None and detection_count_2 is None:
         print("Both models are returning None!")
         return score

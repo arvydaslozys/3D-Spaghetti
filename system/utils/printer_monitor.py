@@ -110,7 +110,7 @@ class PrinterMonitor:
 
             print(detection_count_yolo26)
 
-            self.score = calculate_score(detection_count_yolo26, detection_count_rfdetr, self.score)
+            self.score = calculate_score(self.score,detection_count_yolo26, detection_count_rfdetr)
 
             current_time = time.time()
             fps = 1.0 / (current_time - self.fps_prev_time)
