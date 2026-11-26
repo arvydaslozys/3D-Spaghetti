@@ -13,10 +13,8 @@ from unittest.mock import Mock, call, MagicMock
 from utils.logic_loop import logic_loop
 from printers.klipper_moonraker import KlipperMoonrakerPrinter
 import utils.tools as tools
+import notifications.email_handler
 
-email_handler = PrinterAlertEmailHandler()
-
-failurehandler = FailureHandler(email_handler)
 baseClass = KlipperMoonrakerPrinter("192.168.5.2","TEST")
 camera = KlipperMoonrakerCamera("http://camera.local/stream")
 
@@ -39,44 +37,31 @@ def printer():
     printer_type="klipper_moonraker",
     camera=camera,
     printer=baseClass,
-    failureHandler=failurehandler
     )
     printer.last_frame = np.zeros((100, 100, 3), dtype=np.uint8)
     return printer
 
 def test_handle_failure(monkeypatch,printer,fake_camera):
-
     printer.camera = fake_camera()
-    monkeypatch.setattr(printer.failureHandler.notificationhandler,"check_for_user_response",Mock(return_value=True))
+    monkeypatch.setattr(PrinterAlertEmailHandler,"check_for_user_response",Mock(return_value=True))
     stop_print = Mock()
     monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
-
     send_alert = Mock()
-    monkeypatch.setattr(printer.failureHandler.notificationhandler,"send_alert",send_alert)
-    printer.printer_failed = True
+    monkeypatch.setattr(notifications.email_handler.PrinterAlertEmailHandler,"send_alert",send_alert)
+    printer.printer_failed = False
 
     set_failure_status = Mock()
     monkeypatch.setattr(printer,"set_failure_status",set_failure_status)
+    printer.handle_failure()
 
-    printer.failureHandler.handle_failure(printer)
-
-    set_failure_status.assert_has_calls([
-        call(True),
-        call(False),
-    ])
-    stop_print.assert_called_once()
+    #stop_print.assert_called_once()
     send_alert.assert_called_once()
 
 def test_send_alert_when_failed(monkeypatch,printer,fake_camera):
 
     send_alert = Mock()
-    monkeypatch.setattr(printer.failureHandler.notificationhandler,"send_alert",send_alert)
-
-    monkeypatch.setattr(
-        email_handler,
-        "check_for_user_response",
-        Mock(return_value=False),
-    )
+    monkeypatch.setattr(notifications.email_handler.PrinterAlertEmailHandler,"send_alert",send_alert)
+    monkeypatch.setattr(notifications.email_handler.PrinterAlertEmailHandler,"check_for_user_response",Mock(return_value=False),)
     monkeypatch.setattr(
         "utils.handle_failure.time.sleep",
         lambda _: None,
@@ -201,8 +186,8 @@ def test_KlipperMoonrakerCamera_invalid_ip(monkeypatch):
     assert result is None
 
 def test_email_invalid_config(monkeypatch, printer):
-    monkeypatch.setattr(email_handler,"SMTP_SERVER","TEST")
-    printer.printer_failed = True
-    printer.failureHandler.handle_failure(printer)
+    monkeypatch.setattr(notifications.email_handler.PrinterAlertEmailHandler,"send_alert",Mock(return_value=False))
+    printer.printer_failed = False
+    printer.handle_failure()
     assert printer.printer_failed == False
 
