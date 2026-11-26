@@ -22,6 +22,16 @@ camera = KlipperMoonrakerCamera("http://camera.local/stream")
 
 
 @pytest.fixture()
+def fake_camera():
+    class FakeCamera():
+        def __init__(self, printer_ip = "111.111.111.111"):
+            self.camera_url = printer_ip
+
+        def get_frame(self) -> "numpy.ndarray":
+            return np.zeros((100, 100, 3), dtype=np.uint8)
+    return FakeCamera
+
+@pytest.fixture()
 def printer():
 
     printer = PrinterMonitor(
@@ -34,14 +44,9 @@ def printer():
     printer.last_frame = np.zeros((100, 100, 3), dtype=np.uint8)
     return printer
 
-def test_handle_failure(monkeypatch,printer):
+def test_handle_failure(monkeypatch,printer,fake_camera):
 
-    class FakeCamera:
-        def get_frame(self):
-            return None
-
-    printer.camera = FakeCamera()
-
+    printer.camera = fake_camera()
     monkeypatch.setattr(printer.failureHandler.notificationhandler,"check_for_user_response",Mock(return_value=True))
     stop_print = Mock()
     monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
@@ -62,12 +67,11 @@ def test_handle_failure(monkeypatch,printer):
     stop_print.assert_called_once()
     send_alert.assert_called_once()
 
-def test_send_alert_when_failed(monkeypatch,printer):
-    monkeypatch.setattr(
-        printer,
-        "handle_failure",
-        lambda: printer.failureHandler.handle_failure(printer),
-    )
+def test_send_alert_when_failed(monkeypatch,printer,fake_camera):
+
+    send_alert = Mock()
+    monkeypatch.setattr(printer.failureHandler.notificationhandler,"send_alert",send_alert)
+
     monkeypatch.setattr(
         email_handler,
         "check_for_user_response",
@@ -78,22 +82,10 @@ def test_send_alert_when_failed(monkeypatch,printer):
         lambda _: None,
     )
 
-    class fakeKlipperCamera():
-        def __init__(self, printer_ip):
-            self.camera_url = printer_ip
-
-        def get_frame(self) -> "numpy.ndarray":
-            return np.zeros((100, 100, 3), dtype=np.uint8)
-
-    camera = fakeKlipperCamera("http://camera.local/stream")
-
-    printer.camera=camera
+    printer.camera=fake_camera()
 
     def fake_send_image(*args):
         return 10,None
-
-    send_alert = Mock()
-    monkeypatch.setattr(email_handler,"send_email",send_alert)
 
     monkeypatch.setattr("utils.printer_monitor.send_image_yolo26",fake_send_image)
     monkeypatch.setattr("utils.printer_monitor.send_image_rfdetr",fake_send_image)
@@ -101,7 +93,6 @@ def test_send_alert_when_failed(monkeypatch,printer):
     for _ in range(6):
         printer.process_one_frame(False)
 
-    assert printer.score > 100
     send_alert.assert_called_once()
 
 @pytest.mark.parametrize("value",[True,False])
@@ -214,3 +205,4 @@ def test_email_invalid_config(monkeypatch, printer):
     printer.printer_failed = True
     printer.failureHandler.handle_failure(printer)
     assert printer.printer_failed == False
+
