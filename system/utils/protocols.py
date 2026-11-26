@@ -1,20 +1,23 @@
-from typing import Protocol, TYPE_CHECKING
+from typing import Protocol, TYPE_CHECKING, Optional
 import numpy as np
 
 
 class PrinterProtocol(Protocol):
 
-    def stop_print(self) -> bool | None:
+    def stop_print(self) -> Optional[int]:
         ...
 
-    def is_printing(self) -> bool | None:
+    def is_printing(self) -> Optional[int]:
+        ...
+
+    def pause_print(self) -> Optional[int]:
         ...
 
 
 
 class CameraProtocol(Protocol):
 
-    def get_frame(self) -> np.ndarray | None:
+    def get_frame(self) -> Optional[np.ndarray]:
         ...
 
 
