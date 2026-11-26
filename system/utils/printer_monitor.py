@@ -4,9 +4,10 @@ import numpy as np
 import cv2
 import time
 from utils.tools import draw_boxes_yolo26, calculate_score
-from utils.protocols import PrinterProtocol, CameraProtocol, FailureHandlerProtocol
+from utils.protocols import PrinterProtocol, CameraProtocol
 from typing import Protocol, TYPE_CHECKING
-
+from utils.handle_failure import FailureHandler
+from notifications.email_handler import PrinterAlertEmailHandler
 
 #debug settings
 TEST_IMAGE = False
@@ -25,14 +26,13 @@ if not CHECK_EMAILS:
 
 class PrinterMonitor:
     def __init__(self, printer_name,
-                 printer_type,
-                 camera: CameraProtocol,
-                 printer: PrinterProtocol,
-                 failureHandler: FailureHandlerProtocol):
+                camera: CameraProtocol,
+                printer: PrinterProtocol,
+                printer_type,
+):
 
         self.printer = printer
         self.camera = camera
-        self.failureHandler = failureHandler
 
         self.printer_name = printer_name
         self.fps_prev_time = time.time()
@@ -48,8 +48,21 @@ class PrinterMonitor:
         """
         Handles the failure in a new thread so that the function is non blocking for the main monitoring loop
         """
-        thread = threading.Thread(target=self.failureHandler.handle_failure, args=(self,))
-        thread.start()
+        if not self.printer_failed:
+            self.printer_failed == True
+            self.failurehandler = FailureHandler(self.last_frame,self.printer_name)
+            thread = threading.Thread(target=self.failurehandler.handle_failure, args=())
+            thread.start()
+
+        if self.failurehandler.response == 1:
+            self.stop_print()
+            self.printer_failed = False
+            del self.failurehandler
+
+        elif self.failurehandler.response == 2:
+            print("Sending the alert failed")
+            self.printer_failed = False
+            del self.failurehandler
 
     def get_failure_status(self) -> None:
         return self.printer_failed
