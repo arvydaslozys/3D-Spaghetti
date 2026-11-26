@@ -1,7 +1,11 @@
 from unittest.mock import Mock
 
+from settings import settings
 import pytest
+import time
 
+import notifications.email_handler
+from notifications.email_handler import PrinterAlertEmailHandler
 import utils.handle_failure
 from camera.camera import KlipperMoonrakerCamera
 from printers.klipper_moonraker import KlipperMoonrakerPrinter
@@ -49,6 +53,7 @@ def test_monitor_flags_failure_only_when_score_exceeds_100(monkeypatch,value,pri
         assert printer.printer_failed == True
 
 def test_monitor_creates_one_failure_handler(monkeypatch, printer):
+    
     constructor = Mock()
     monkeypatch.setattr("utils.printer_monitor.FailureHandler", constructor)
     monkeypatch.setattr("utils.printer_monitor.threading.Thread", Mock())
@@ -56,3 +61,34 @@ def test_monitor_creates_one_failure_handler(monkeypatch, printer):
     printer.handle_failure()
 
     constructor.assert_called_once_with(printer.last_frame, printer.printer_name)
+
+def test_monitor_stop_immediately(monkeypatch,printer):
+    monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.SEND_COMMAND_IMMEDIATELY)
+
+    send_email = Mock()
+    monkeypatch.setattr(PrinterAlertEmailHandler,"send_email",send_email)
+
+    stop_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
+    
+    printer.handle_failure()
+
+    send_email.assert_not_called()
+    stop_print.assert_called_once()
+
+
+def test_monitor_send_alert_only(monkeypatch,printer):
+    monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.ONLY_SEND_NOTIFICATION)
+
+    send_email = Mock()
+    monkeypatch.setattr(PrinterAlertEmailHandler,"send_email",send_email)
+
+    stop_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
+
+    printer.handle_failure()
+
+    time.sleep(0.5)
+
+    send_email.assert_called_once()
+    stop_print.assert_not_called()
