@@ -23,9 +23,16 @@ class FailureHandler:
         self.response = 0
         self.attempts = 20
 
-    def handle_failure(self) -> None:
+    def handle_failure(self, NOTIFICATION_ONLY: bool = False) -> None:
         RESPONSE_RECEIVED = 1
         SEND_ALERT_FAILED = 2
+
+        if NOTIFICATION_ONLY:
+            if not self.notificationhandler.send_alert(self.frame, self.printer_name):
+                self.response = SEND_ALERT_FAILED
+                return
+            self.response = RESPONSE_RECEIVED
+            return
 
         #if alert fails to send
         if not self.notificationhandler.send_alert(self.frame, self.printer_name):
@@ -38,6 +45,6 @@ class FailureHandler:
             #-------USER CONFRIMS FAILURE------#
             if self.notificationhandler.check_for_user_response(self.printer_name):
                 self.response = RESPONSE_RECEIVED
-                break
+                return
 
             time.sleep(5)

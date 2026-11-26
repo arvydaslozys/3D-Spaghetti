@@ -1,13 +1,17 @@
+from settings import settings
+
 from utils.services import send_image_rfdetr, send_image_yolo26
 import threading
 import numpy as np
 import cv2
 import time
+
 from utils.tools import draw_boxes_yolo26, calculate_score
 from utils.protocols import PrinterProtocol, CameraProtocol
-from typing import Protocol, TYPE_CHECKING
+from typing import Protocol, TYPE_CHECKING, Optional
 from utils.handle_failure import FailureHandler
 from notifications.email_handler import PrinterAlertEmailHandler
+
 
 #debug settings
 TEST_IMAGE = False
@@ -28,7 +32,7 @@ class PrinterMonitor:
     def __init__(self, printer_name,
                 camera: CameraProtocol,
                 printer: PrinterProtocol,
-                printer_type,
+
 ):
 
         self.printer = printer
@@ -48,21 +52,52 @@ class PrinterMonitor:
         """
         Handles the failure in a new thread so that the function is non blocking for the main monitoring loop
         """
-        if not self.printer_failed:
-            self.printer_failed == True
-            self.failurehandler = FailureHandler(self.last_frame,self.printer_name)
-            thread = threading.Thread(target=self.failurehandler.handle_failure, args=())
-            thread.start()
+        #If user wishes to receive a notification, and then confirm the failure
+        if settings.action_when_failure_detected is settings.FailureAction.SEND_COMMAND_AFTER_CONFIRMATION:
 
-        if self.failurehandler.response == 1:
-            self.stop_print()
-            self.printer_failed = False
-            del self.failurehandler
+            if not self.printer_failed:
+                self.printer_failed = True
+                self.failurehandler = FailureHandler(self.last_frame,self.printer_name)
+                thread = threading.Thread(target=self.failurehandler.handle_failure, args=())
+                thread.start()
+                return
 
-        elif self.failurehandler.response == 2:
-            print("Sending the alert failed")
+            if self.failurehandler.response == 0:
+                return
+
+            if self.failurehandler.response == 1:
+                if settings.printer_command_when_failure_detected is settings.PrinterCommand.STOP:
+                    self.stop_print()
+                elif settings.printer_command_when_failure_detected is settings.PrinterCommand.PAUSE:
+                    self.pause_print()
+                
+                self.printer_failed = False
+                del self.failurehandler
+
+            elif self.failurehandler.response == 2:
+                print("Sending the alert failed")
+                self.printer_failed = False
+                del self.failurehandler
+                
+        #If user only selects to stop the printer without sending a notification
+        if settings.action_when_failure_detected is settings.FailureAction.SEND_COMMAND_IMMEDIATELY:
+            if settings.printer_command_when_failure_detected is settings.PrinterCommand.STOP:
+                self.stop_print()
+            elif settings.printer_command_when_failure_detected is settings.PrinterCommand.PAUSE:
+                self.pause_print()
             self.printer_failed = False
-            del self.failurehandler
+
+        #If user only selects to send a notification
+        if settings.action_when_failure_detected is settings.FailureAction.ONLY_SEND_NOTIFICATION:
+            if not self.printer_failed:
+                self.printer_failed = True
+                self.failurehandler = FailureHandler(self.last_frame,self.printer_name)
+                thread = threading.Thread(target=self.failurehandler.handle_failure, args=(True,))
+                thread.start()
+            if self.failurehandler.response == 1:
+                self.printer_failed = False
+                del self.failurehandler
+
 
     def get_failure_status(self) -> None:
         return self.printer_failed
@@ -100,16 +135,21 @@ class PrinterMonitor:
         else:
             return True
 
-    def get_frame(self) -> np.ndarray | None:
+    def get_frame(self) -> Optional[np.ndarray]:
         """
         Returns:
             numpy.ndarray
         """
         return self.camera.get_frame()
 
-    def stop_print(self) -> None:
+    def stop_print(self) -> Optional[bool]:
         print(f"[{self.printer_name}] Stopping printer!")
         self.printer.stop_print()
+
+    def pause_print(self) -> Optional[bool]:
+        print(f"[{self.printer_name}] Pausing printer!")
+        self.printer.pause_print()
+
 
     def process_one_frame(self,SHOW_DETECTIONS: bool) -> None:
         if not self.printer_failed:
@@ -134,7 +174,6 @@ class PrinterMonitor:
                 cv2.imshow(f"{self.printer_name}_YOLO26",draw_boxes_yolo26(self.last_frame.copy(), boxes_yolo26))
 
             print(f"[{self.printer_name}] failure score = {self.score}, FPS = {fps:.2f}")
-
 
             if self.score > 100:
                 self.score = 0
