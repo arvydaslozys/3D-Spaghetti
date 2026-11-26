@@ -16,3 +16,5 @@ legacy/
 /.venv/
 /.pytest_cache/
 configurations/
+.pytest_cache/
+

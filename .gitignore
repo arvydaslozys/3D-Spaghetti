@@ -2,5 +2,6 @@
 .idea/
 .DS_Store
 3D-Spaghetti-main.code-workspace
-.vscode/settings.json
+.vscode/
 system/.DS_Store
+
