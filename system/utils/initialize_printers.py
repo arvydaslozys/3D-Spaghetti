@@ -23,7 +23,6 @@ def init_printers() -> list[PrinterMonitor] :
 
     for printers in data["printers"]:
 
-        failurehandler = FailureHandler(notification_handler)
         printer = None
         camera = None
         printer_name = printers["printer_name"]
@@ -48,10 +47,8 @@ def init_printers() -> list[PrinterMonitor] :
 
         printer = PrinterMonitor(
             printer_name = printer_name,
-            printer_type = printer_type,
             camera = camera,
             printer = printertype,
-            failureHandler = failurehandler
         )
 
         printermonitors.append(printer)
