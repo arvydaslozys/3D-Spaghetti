@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
+import utils.handle_failure
 from camera.camera import KlipperMoonrakerCamera
 from printers.klipper_moonraker import KlipperMoonrakerPrinter
 
@@ -46,3 +47,12 @@ def test_monitor_flags_failure_only_when_score_exceeds_100(monkeypatch,value,pri
         assert printer.printer_failed == False
     else:
         assert printer.printer_failed == True
+
+def test_monitor_creates_one_failure_handler(monkeypatch, printer):
+    constructor = Mock()
+    monkeypatch.setattr("utils.printer_monitor.FailureHandler", constructor)
+    monkeypatch.setattr("utils.printer_monitor.threading.Thread", Mock())
+
+    printer.handle_failure()
+
+    constructor.assert_called_once_with(printer.last_frame, printer.printer_name)

@@ -28,7 +28,6 @@ def test_get_frame_returns_image_on_success_and_none_on_read_failure(monkeypatch
     else:
         np.testing.assert_array_equal(result, expected)
 
-
 def test_get_frame_returns_none_for_invalid_ip(monkeypatch):
     camera = KlipperMoonrakerCamera("111.111.111.111")
     result = camera.get_frame()
