@@ -97,6 +97,9 @@ class PrinterMonitor:
             if self.failurehandler.response == 1:
                 self.printer_failed = False
                 del self.failurehandler
+            if self.failurehandler.response == 2:
+                self.printer_failed = False
+                del self.failurehandler
 
 
     def get_failure_status(self) -> None:
