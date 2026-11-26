@@ -124,6 +124,7 @@ class PrinterMonitor:
 
 
             if self.score > 100:
+                self.score = 0
                 self.handle_failure()
 
     def is_printer_online_check_due(self, interval: int) -> bool:
