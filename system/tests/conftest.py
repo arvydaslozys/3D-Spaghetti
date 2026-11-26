@@ -19,13 +19,11 @@ def fake_camera():
             return np.zeros((100, 100, 3), dtype=np.uint8)
     return FakeCamera
 
-
 @pytest.fixture()
 def printer():
 
     printer = PrinterMonitor(
     printer_name="TEST",
-    printer_type="klipper_moonraker",
     camera=camera,
     printer=baseClass,
     )

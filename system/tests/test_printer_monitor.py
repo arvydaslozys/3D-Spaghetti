@@ -53,17 +53,22 @@ def test_monitor_flags_failure_only_when_score_exceeds_100(monkeypatch,value,pri
         assert printer.printer_failed == True
 
 def test_monitor_creates_one_failure_handler(monkeypatch, printer):
-    
+   
     constructor = Mock()
     monkeypatch.setattr("utils.printer_monitor.FailureHandler", constructor)
     monkeypatch.setattr("utils.printer_monitor.threading.Thread", Mock())
 
     printer.handle_failure()
+    printer.handle_failure()
+
 
     constructor.assert_called_once_with(printer.last_frame, printer.printer_name)
 
 def test_monitor_stop_immediately(monkeypatch,printer):
     monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.SEND_COMMAND_IMMEDIATELY)
+
+    pause_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"pause_print",pause_print)
 
     send_email = Mock()
     monkeypatch.setattr(PrinterAlertEmailHandler,"send_email",send_email)
@@ -75,9 +80,9 @@ def test_monitor_stop_immediately(monkeypatch,printer):
 
     send_email.assert_not_called()
     stop_print.assert_called_once()
+    pause_print.assert_not_called()
 
-
-def test_monitor_send_alert_only(monkeypatch,printer):
+def test_monitor_ONLY_SEND_NOTIFICATION(monkeypatch,printer):
     monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.ONLY_SEND_NOTIFICATION)
 
     send_email = Mock()
@@ -86,9 +91,104 @@ def test_monitor_send_alert_only(monkeypatch,printer):
     stop_print = Mock()
     monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
 
+    pause_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"pause_print",pause_print)
+
     printer.handle_failure()
 
     time.sleep(0.5)
 
     send_email.assert_called_once()
     stop_print.assert_not_called()
+    pause_print.assert_not_called()
+
+def test_pause_printer_SEND_COMMAND_IMMEDIATELY(monkeypatch, printer):
+    monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.SEND_COMMAND_IMMEDIATELY)
+    monkeypatch.setattr(settings,"printer_command_when_failure_detected",settings.PrinterCommand.PAUSE)
+
+    send_email = Mock()
+    monkeypatch.setattr(PrinterAlertEmailHandler,"send_email",send_email)
+
+    stop_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
+
+    pause_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"pause_print",pause_print)
+
+    printer.handle_failure()
+
+    time.sleep(0.5)
+
+    send_email.assert_not_called()
+    stop_print.assert_not_called()
+    pause_print.assert_called_once()
+
+def test_stop_printer_SEND_COMMAND_IMMEDIATELY(monkeypatch, printer):
+    monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.SEND_COMMAND_IMMEDIATELY)
+    monkeypatch.setattr(settings,"printer_command_when_failure_detected",settings.PrinterCommand.STOP)
+
+    send_email = Mock()
+    monkeypatch.setattr(PrinterAlertEmailHandler,"send_email",send_email)
+
+    stop_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
+
+    pause_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"pause_print",pause_print)
+
+    printer.handle_failure()
+
+    time.sleep(0.5)
+
+    send_email.assert_not_called()
+    stop_print.assert_called_once()
+    pause_print.assert_not_called()
+
+def test_stop_printer_SEND_COMMAND_AFTER_CONFIRMATION_RESPONSE_RECEIVED(monkeypatch, printer):
+    monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.SEND_COMMAND_IMMEDIATELY)
+    monkeypatch.setattr(settings,"printer_command_when_failure_detected",settings.PrinterCommand.STOP)
+    #RESPONSE_RECEIVED = 1 
+    def fake_handle_failure(self, *args, **kwargs):
+        self.response = 1
+
+    monkeypatch.setattr(utils.handle_failure.FailureHandler, "handle_failure", fake_handle_failure)
+
+    send_email = Mock()
+    monkeypatch.setattr(PrinterAlertEmailHandler,"send_email",send_email)
+
+    stop_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
+
+    pause_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"pause_print",pause_print)
+
+    printer.handle_failure()
+
+    send_email.assert_not_called()
+    stop_print.assert_called_once()
+    pause_print.assert_not_called()
+
+def test_stop_printer_SEND_COMMAND_AFTER_CONFIRMATION_SEND_ALERT_FAILED(monkeypatch, printer):
+    monkeypatch.setattr(settings,"action_when_failure_detected",settings.FailureAction.SEND_COMMAND_AFTER_CONFIRMATION)
+    monkeypatch.setattr(settings,"printer_command_when_failure_detected",settings.PrinterCommand.STOP)
+    #SEND_ALERT_FAILED = 2 
+
+    def fake_handle_failure(self, *args, **kwargs):
+        self.response = 2
+
+    monkeypatch.setattr(utils.handle_failure.FailureHandler, "handle_failure", fake_handle_failure)
+
+    send_email = Mock()
+    monkeypatch.setattr(PrinterAlertEmailHandler,"send_email",send_email)
+
+    stop_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"stop_print",stop_print)
+
+    pause_print = Mock()
+    monkeypatch.setattr(KlipperMoonrakerPrinter,"pause_print",pause_print)
+
+    printer.handle_failure()
+
+    send_email.assert_not_called()
+    stop_print.assert_not_called()
+    pause_print.assert_not_called()
