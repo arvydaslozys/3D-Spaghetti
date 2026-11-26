@@ -6,7 +6,7 @@ class UsbCamera:
     def __init__(self,camera_id):
         self.camera_id = camera_id
 
-    def get_frame(self) -> np.ndarray | None:
+    def get_frame(self) -> Optional[np.ndarray]:
         cap = cv2.VideoCapture(self.camera_id)
 
         if not cap.isOpened():
@@ -26,7 +26,7 @@ class KlipperMoonrakerCamera:
         self.camera_url = f"http://{printer_ip}/webcam/stream"
         self.cap = None
 
-    def get_frame(self) -> np.ndarray | None:
+    def get_frame(self) -> Optional[np.ndarray]:
         if self.cap is None:
             self.cap = cv2.VideoCapture(self.camera_url)
 

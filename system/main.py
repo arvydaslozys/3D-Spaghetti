@@ -6,7 +6,7 @@ from utils.initialize_printers import init_printers
 
 if __name__ == "__main__":
     hello()
-
+     
     printers = init_printers()
 
     while True:
